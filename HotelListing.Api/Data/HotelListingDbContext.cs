@@ -1,3 +1,4 @@
+using HotelListing.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelListingApi.Data;

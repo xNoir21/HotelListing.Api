@@ -5,5 +5,6 @@ public record GetHotelsDto(
     string Name,
     string Address,
     double Rating,
+    string CountryName,
     int CountryId
 );

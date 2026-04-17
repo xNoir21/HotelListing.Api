@@ -1,7 +1,6 @@
-using HotelListing.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace HotelListingApi.Data;
+namespace HotelListing.Api.Data;
 
 public class HotelListingDbContext(DbContextOptions<HotelListingDbContext> options) : DbContext(options)
 {

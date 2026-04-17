@@ -1,5 +1,6 @@
 using HotelListing.Api.Contracts;
 using HotelListing.Api.DTOs.Country;
+using HotelListing.Api.Results;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelListing.Api.Controllers;
@@ -12,19 +13,16 @@ public class CountriesController(ICountriesService countriesService) : Controlle
     [HttpGet]
     public async Task<ActionResult<IEnumerable<GetCountriesDto>>> GetCountries()
     {
-        var countries = await countriesService.GetCountriesAsync();
-        return Ok(countries);
+        var result = await countriesService.GetCountriesAsync();
+        return ToActionResult(result);
     }
 
     // GET: api/Countries/5
     [HttpGet("{id}")]
     public async Task<ActionResult<GetCountryDto>> GetCountry(int id)
     {
-        var country = await countriesService.GetCountryAsync(id);
-
-        if (country == null) return NotFound();
-
-        return country;
+        var result = await countriesService.GetCountryAsync(id);
+        return ToActionResult(result);
     }
 
     // PUT: api/Countries/5
@@ -32,16 +30,8 @@ public class CountriesController(ICountriesService countriesService) : Controlle
     [HttpPut("{id}")]
     public async Task<IActionResult> PutCountry(int id, [FromBody] UpdateCountryDto countryDto)
     {
-        if (id != countryDto.CountryId) return BadRequest("Route ID and body ID don't match");
-        try
-        {
-            await countriesService.UpdateCountryAsync(id, countryDto);
-            return NoContent();
-        }
-        catch (KeyNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
+        var result = await countriesService.UpdateCountryAsync(id, countryDto);
+        return ToActionResult(result);
     }
 
     // POST: api/Countries
@@ -49,22 +39,42 @@ public class CountriesController(ICountriesService countriesService) : Controlle
     [HttpPost]
     public async Task<ActionResult<CreateCountryDto>> PostCountry([FromBody] CreateCountryDto countryDto)
     {
-        var resultDto = await countriesService.CreateCountryAsync(countryDto);
-        return CreatedAtAction(nameof(GetCountry), new { id = resultDto.CountryId }, resultDto);
+        var result = await countriesService.CreateCountryAsync(countryDto);
+        if (!result.IsSuccess) return MapErrorToResponse(result.Errors);
+        return CreatedAtAction(nameof(GetCountry), new { id = result.Value!.CountryId }, result.Value);
     }
 
     // DELETE: api/Countries/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCountry(int id)
     {
-        try
+        var result = await countriesService.DeleteCountryAsync(id);
+        return ToActionResult(result);
+    }
+
+    private ActionResult ToActionResult(Result result)
+    {
+        if (result.IsSuccess) return NoContent();
+
+        return result.IsSuccess ? NoContent() : MapErrorToResponse(result.Errors);
+    }
+
+    private ActionResult<T> ToActionResult<T>(Result<T> result)
+    {
+        return result.IsSuccess ? Ok(result.Value) : MapErrorToResponse(result.Errors);
+    }
+
+    private ActionResult MapErrorToResponse(Error[] errors)
+    {
+        if (errors.Length == 0) return Problem();
+        var error = errors[0];
+        return error.Code switch
         {
-            await countriesService.DeleteCountryAsync(id);
-            return NoContent();
-        }
-        catch (KeyNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
+            "NotFound" => NotFound(error.Description),
+            "Conflict" => Conflict(error.Description),
+            "BadRequest" => BadRequest(error.Description),
+            "Validation" => ValidationProblem(error.Description),
+            _ => Problem(string.Join("; ", errors.Select(x => x.Description)), title: error.Code)
+        };
     }
 }

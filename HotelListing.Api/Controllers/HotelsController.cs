@@ -7,25 +7,23 @@ namespace HotelListing.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class HotelsController(IHotelsService hotelsService) : ControllerBase
+public class HotelsController(IHotelsService hotelsService) : BaseApiController
 {
     // GET: api/Hotels
     [HttpGet]
     public async Task<ActionResult<IEnumerable<GetHotelsDto>>> GetHotels()
     {
         var hotels = await hotelsService.GetHotelsAsync();
-        return Ok(hotels);
+        return ToActionResult(hotels);
     }
 
     // GET: api/Hotels/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<GetHotelDto>> GetHotel(int id)
+    public async Task<ActionResult<GetHotelsDto>> GetHotel(int id)
     {
         var hotel = await hotelsService.GetHotelAsync(id);
 
-        if (hotel == null) return NotFound();
-
-        return Ok(hotel);
+        return ToActionResult(hotel);
     }
 
     // PUT: api/Hotels/5
@@ -33,17 +31,8 @@ public class HotelsController(IHotelsService hotelsService) : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> PutHotel(int id, UpdateHotelDto hotelDto)
     {
-        if (id != hotelDto.Id) return BadRequest();
-
-        try
-        {
-            await hotelsService.UpdateHotelAsync(id, hotelDto);
-            return NoContent();
-        }
-        catch (KeyNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
+        var result = await hotelsService.UpdateHotelAsync(id, hotelDto);
+        return ToActionResult(result);
     }
 
     // POST: api/Hotels
@@ -51,29 +40,17 @@ public class HotelsController(IHotelsService hotelsService) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Hotel>> PostHotel(CreateHotelDto hotelDto)
     {
-        try
-        {
-            var resultDto = await hotelsService.CreateHotelAsync(hotelDto);
-            return CreatedAtAction(nameof(GetHotel), new { id = resultDto.Id }, resultDto);
-        }
-        catch (KeyNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
+        var resultDto = await hotelsService.CreateHotelAsync(hotelDto);
+        if (!resultDto.IsSuccess) return MapErrorToResponse(resultDto.Errors);
+        return CreatedAtAction(nameof(GetHotel), new { id = resultDto.Value.Id }, resultDto.Value);
     }
 
     // DELETE: api/Hotels/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteHotel(int id)
     {
-        try
-        {
-            await hotelsService.DeleteHotelAsync(id);
-            return NoContent();
-        }
-        catch (KeyNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
+        var result = await hotelsService.DeleteHotelAsync(id);
+        return ToActionResult(result);
     }
+
 }

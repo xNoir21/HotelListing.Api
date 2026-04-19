@@ -15,6 +15,7 @@ public class HotelMappingProfile :  Profile
             );
 
         CreateMap<CreateHotelDto, Hotel>();
+        CreateMap<Hotel, GetHotelSlimDto>();
     }
 }
 

@@ -65,9 +65,9 @@ public readonly record struct Result<T>
         return new Result<T>(false, default!, errors);
     }
 
-    public static Result<T> NotFound()
+    public static Result<T> NotFound(params Error[] errors)
     {
-        return new Result<T>(false, default!, Array.Empty<Error>());
+        return new Result<T>(false, default!, errors);
     }
     
     public static Result<T> BadRequest(params Error[] errors)

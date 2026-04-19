@@ -1,19 +1,22 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using HotelListing.Api.Constants;
 using HotelListing.Api.Contracts;
 using HotelListing.Api.Data;
 using HotelListing.Api.DTOs.Country;
-using HotelListing.Api.DTOs.Hotel;
 using HotelListing.Api.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelListing.Api.Services;
 
-public class CountriesService(HotelListingDbContext context) : ICountriesService
+public class CountriesService(HotelListingDbContext context, IMapper mapper) : ICountriesService
 {
     public async Task<Result<IEnumerable<GetCountriesDto>>> GetCountriesAsync()
     {
         var countries = await context.Countries
-            .Select(c => new GetCountriesDto(c.CountryId, c.Name, c.ShortName))
+            .ProjectTo<GetCountriesDto>(mapper.ConfigurationProvider)
             .ToListAsync();
+        
         return Result<IEnumerable<GetCountriesDto>>.Success(countries);
     }
 
@@ -21,19 +24,12 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
     {
         var country = await context.Countries
             .Where(c => c.CountryId == id)
-            .Select(c => new GetCountryDto(
-                c.CountryId,
-                c.Name,
-                c.ShortName,
-                c.Hotels.Select(h => new GetHotelSlimDto(
-                    h.Id,
-                    h.Name,
-                    h.Address,
-                    h.Rating)
-                ).ToList()
-            ))
+            .ProjectTo<GetCountryDto>(mapper.ConfigurationProvider)
             .FirstOrDefaultAsync();
-        return country is null ? Result<GetCountryDto>.NotFound() : Result<GetCountryDto>.Success(country);
+        return country is null ? 
+            Result<GetCountryDto>.NotFound(new Error(ErrorCodes.NotFound, $"Country '{id}' not found")) 
+            : 
+            Result<GetCountryDto>.Success(country);
     }
 
     public async Task<Result<GetCountryDto>> CreateCountryAsync(CreateCountryDto countryDto)
@@ -44,30 +40,23 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
             if (exists)
                 return Result<GetCountryDto>.Failure(
                     new Error(
-                        "Conflict",
+                        ErrorCodes.Conflict,
                         $"Country with the name {countryDto.Name} already exists."
                     )
                 );
-            var country = new Country
-            {
-                Name = countryDto.Name,
-                ShortName = countryDto.ShortName
-            };
+            
+            var country =  mapper.Map<Country>(countryDto);
 
             context.Countries.Add(country);
             await context.SaveChangesAsync();
-
-            var resultDto = new GetCountryDto(
-                country.CountryId,
-                country.Name,
-                country.ShortName,
-                []
-            );
+            
+            var resultDto = mapper.Map<GetCountryDto>(country);
+            
             return Result<GetCountryDto>.Success(resultDto);
         }
         catch (Exception e)
         {
-            return Result<GetCountryDto>.Failure(new Error("Error", e.Message));
+            return Result<GetCountryDto>.Failure(new Error(ErrorCodes.Error, e.Message));
         }
     }
 
@@ -76,29 +65,19 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
         try
         {
             if (id != countryDto.CountryId)
-                return Result.BadRequest(new Error("Validation", "Route ID and body ID don't match"));
+                return Result.BadRequest(new Error(ErrorCodes.Validation, "Route ID and body ID don't match"));
 
             var country = await context.Countries.FindAsync(id);
-            if (country is null) return Result.NotFound(new Error("NotFound", $"Country '{id}' not found"));
+            if (country is null) return Result.NotFound(new Error(ErrorCodes.NotFound, $"Country '{id}' not found"));
 
-            var exists = await CountryExistsAsync(country.Name);
-            if (exists)
-                return Result.Failure(
-                    new Error(
-                        "Conflict",
-                        $"Country with the name {countryDto.Name} already exists."
-                    )
-                );
-
-            country.Name = countryDto.Name;
-            country.ShortName = countryDto.ShortName;
+            mapper.Map(countryDto, country);
 
             await context.SaveChangesAsync();
             return Result.Success();
         }
         catch (Exception e)
         {
-            return Result.Failure(new Error("Error", e.Message));
+            return Result.Failure(new Error(ErrorCodes.Error, e.Message));
         }
     }
 
@@ -107,7 +86,7 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
         try
         {
             var country = await context.Countries.FindAsync(id);
-            if (country is null) return Result.NotFound(new Error("NotFound", $"Country '{id}' not found"));
+            if (country is null) return Result.NotFound(new Error(ErrorCodes.NotFound, $"Country '{id}' not found"));
 
             context.Countries.Remove(country);
             await context.SaveChangesAsync();
@@ -116,7 +95,7 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
         }
         catch (Exception e)
         {
-            return Result.Failure(new Error("Error", e.Message));
+            return Result.Failure(new Error(ErrorCodes.Error, e.Message));
         }
     }
 

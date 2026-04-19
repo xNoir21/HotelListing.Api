@@ -6,6 +6,5 @@ public class HotelListingDbContext(DbContextOptions<HotelListingDbContext> optio
 {
     public DbSet<Hotel> Hotels { get; set; }
     public DbSet<Country> Countries { get; set; }
-    
 }
 

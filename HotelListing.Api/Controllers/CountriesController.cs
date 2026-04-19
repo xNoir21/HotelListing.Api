@@ -1,13 +1,12 @@
 using HotelListing.Api.Contracts;
 using HotelListing.Api.DTOs.Country;
-using HotelListing.Api.Results;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelListing.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CountriesController(ICountriesService countriesService) : ControllerBase
+public class CountriesController(ICountriesService countriesService) : BaseApiController
 {
     // GET: api/Countries
     [HttpGet]
@@ -50,31 +49,5 @@ public class CountriesController(ICountriesService countriesService) : Controlle
     {
         var result = await countriesService.DeleteCountryAsync(id);
         return ToActionResult(result);
-    }
-
-    private ActionResult ToActionResult(Result result)
-    {
-        if (result.IsSuccess) return NoContent();
-
-        return result.IsSuccess ? NoContent() : MapErrorToResponse(result.Errors);
-    }
-
-    private ActionResult<T> ToActionResult<T>(Result<T> result)
-    {
-        return result.IsSuccess ? Ok(result.Value) : MapErrorToResponse(result.Errors);
-    }
-
-    private ActionResult MapErrorToResponse(Error[] errors)
-    {
-        if (errors.Length == 0) return Problem();
-        var error = errors[0];
-        return error.Code switch
-        {
-            "NotFound" => NotFound(error.Description),
-            "Conflict" => Conflict(error.Description),
-            "BadRequest" => BadRequest(error.Description),
-            "Validation" => ValidationProblem(error.Description),
-            _ => Problem(string.Join("; ", errors.Select(x => x.Description)), title: error.Code)
-        };
     }
 }

@@ -1,6 +1,9 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace HotelListing.Api.DTOs.Country;
 
 public class UpdateCountryDto : CreateCountryDto
 {
-    public required int CountryId { get; set; }
+    [Required]
+    public int CountryId { get; set; }
 }

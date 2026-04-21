@@ -1,7 +1,10 @@
+using HotelListing.Api.Constants;
 using HotelListing.Api.Contracts;
 using HotelListing.Api.Data;
+using HotelListing.Api.Handlers;
 using HotelListing.Api.MappingProfiles;
 using HotelListing.Api.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,13 +13,31 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("HotelListingDbConnectionString");
 builder.Services.AddDbContext<HotelListingDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
+    .AddEntityFrameworkStores<HotelListingDbContext>();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = AuthenticationDefaults.ApiKeyScheme;
+    options.DefaultChallengeScheme = AuthenticationDefaults.ApiKeyScheme;
+}).AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>(
+    AuthenticationDefaults.BasicScheme,
+    options => { }
+).AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+    AuthenticationDefaults.ApiKeyScheme,
+    options => { }
+);
+builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<ICountriesService, CountriesService>();
 builder.Services.AddScoped<IHotelsService, HotelService>();
+builder.Services.AddScoped<IUsersService, UsersService>();
+builder.Services.AddScoped<IApiKeyValidatorService, ApiKeyValidatorService>();
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<HotelMappingProfile>();
     cfg.AddProfile<CountryMappingProfile>();
+    cfg.AddProfile<UserMappingProfiles>();
 });
 
 builder.Services.AddControllers().AddJsonOptions(opt =>
@@ -24,15 +45,14 @@ builder.Services.AddControllers().AddJsonOptions(opt =>
     opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
 });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi(); 
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+app.MapGroup("api/default/auth").MapIdentityApi<ApplicationUser>();
+
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 app.UseHttpsRedirection();
 

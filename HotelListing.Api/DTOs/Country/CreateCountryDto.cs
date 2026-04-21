@@ -4,8 +4,11 @@ namespace HotelListing.Api.DTOs.Country;
 
 public class CreateCountryDto
 {
+    [Required]
     [MaxLength(50)]
-    public required string Name { get; set; }
+    public string Name { get; set; } = null!;
+    
+    [Required]
     [MaxLength(3)]
-    public required string ShortName { get; set; }
+    public string ShortName { get; set; } = null!;
 }

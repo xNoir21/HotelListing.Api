@@ -1,3 +1,4 @@
+using System.Text;
 using HotelListing.Api.Constants;
 using HotelListing.Api.Contracts;
 using HotelListing.Api.Data;
@@ -5,7 +6,10 @@ using HotelListing.Api.Handlers;
 using HotelListing.Api.MappingProfiles;
 using HotelListing.Api.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,18 +18,34 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("HotelListingDbConnectionString");
 builder.Services.AddDbContext<HotelListingDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<HotelListingDbContext>();
+
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = AuthenticationDefaults.ApiKeyScheme;
-    options.DefaultChallengeScheme = AuthenticationDefaults.ApiKeyScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>(
     AuthenticationDefaults.BasicScheme,
     options => { }
 ).AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
     AuthenticationDefaults.ApiKeyScheme,
     options => { }
-);
+).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration.GetSection("JWTSettings:Issuer").Value,
+        ValidAudience = builder.Configuration.GetSection("JWTSettings:Audience").Value,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration.GetSection("JWTSettings:Key").Value)),
+        ClockSkew = TimeSpan.Zero
+    };
+});
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<ICountriesService, CountriesService>();

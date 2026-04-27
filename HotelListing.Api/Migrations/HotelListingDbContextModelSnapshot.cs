@@ -52,6 +52,16 @@ namespace HotelListing.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("ApiKeys");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a4d3988c-5b82-40ce-8aca-d90d590b1387"),
+                            AppName = "app",
+                            CreatedOnUtc = new DateTimeOffset(new DateTime(2026, 4, 27, 0, 43, 7, 40, DateTimeKind.Unspecified).AddTicks(6670), new TimeSpan(0, 0, 0, 0, 0)),
+                            KeyHash = "36F27D144462317E37C5F364A9657A667A76C56C38896EF2E70031391A69B2B2",
+                            KeyId = "ba0bd8fd6a88"
+                        });
                 });
 
             modelBuilder.Entity("HotelListing.Api.Data.ApplicationUser", b =>
@@ -202,6 +212,22 @@ namespace HotelListing.Api.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "a4d3988c-5b82-40ce-8aca-d90d590b1387",
+                            ConcurrencyStamp = "2b8c8d5a-d201-43bd-9817-0843d9fc8f0f",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = "a740b281-d7d6-458f-9c25-8294e7de3fa6",
+                            ConcurrencyStamp = "1bf8771f-2d57-40da-a3e9-d41149de51ff",
+                            Name = "User",
+                            NormalizedName = "USER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

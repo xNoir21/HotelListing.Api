@@ -1,9 +1,11 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelListing.Api.Data;
 
-public class HotelListingDbContext(DbContextOptions<HotelListingDbContext> options) : IdentityDbContext<ApplicationUser>(options)
+public class HotelListingDbContext(DbContextOptions<HotelListingDbContext> options) : 
+    IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<Hotel> Hotels { get; set; }
     public DbSet<Country> Countries { get; set; }
@@ -12,11 +14,7 @@ public class HotelListingDbContext(DbContextOptions<HotelListingDbContext> optio
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        modelBuilder.Entity<ApiKeys>(builder =>
-        {
-            builder.HasIndex(e => e.KeyId).IsUnique();
-        });
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 }
 

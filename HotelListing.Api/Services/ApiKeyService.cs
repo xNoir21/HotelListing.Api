@@ -25,7 +25,7 @@ public class ApiKeyService(HotelListingDbContext context) : IApiKeyService
                     "Valid ApiKey already exists for this app."
                 )
             );
-        
+
         var keyIdBytes = RandomNumberGenerator.GetBytes(6);
         var secretBytes = RandomNumberGenerator.GetBytes(36);
 
@@ -38,12 +38,12 @@ public class ApiKeyService(HotelListingDbContext context) : IApiKeyService
         var fullKey = $"xnoir_{keyId}.{secret}";
         var keyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
         var createdOn = DateTimeOffset.UtcNow;
-        
-        var apiKeys = new ApiKeys()
+
+        var apiKeys = new ApiKeys
         {
             AppName = createApiKeysDto.AppName,
-            CreatedOnUtc =  createdOn,
-            ExpiresOnUtc =  createdOn.AddDays(60),
+            CreatedOnUtc = createdOn,
+            ExpiresOnUtc = createdOn.AddDays(60),
             KeyHash = keyHash,
             KeyId = keyId
         };
@@ -55,7 +55,7 @@ public class ApiKeyService(HotelListingDbContext context) : IApiKeyService
             AppName = createApiKeysDto.AppName,
             ApiKey = fullKey,
             CreatedOn = createdOn,
-            ExpiresOn = createdOn.AddDays(60),
+            ExpiresOn = createdOn.AddDays(60)
         };
 
         return Result<ReturnApiKeysDto>.Success(newApiKeys);

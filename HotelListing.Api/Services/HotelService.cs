@@ -55,7 +55,7 @@ public class HotelService(HotelListingDbContext context, ICountriesService count
                     )
                 );
 
-            var hotel = mapper.Map<Hotel>((hotelDto));
+            var hotel = mapper.Map<Hotel>(hotelDto);
 
             context.Hotels.Add(hotel);
             await context.SaveChangesAsync();

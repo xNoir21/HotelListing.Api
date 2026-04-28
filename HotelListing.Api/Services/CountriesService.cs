@@ -16,7 +16,7 @@ public class CountriesService(HotelListingDbContext context, IMapper mapper) : I
         var countries = await context.Countries
             .ProjectTo<GetCountriesDto>(mapper.ConfigurationProvider)
             .ToListAsync();
-        
+
         return Result<IEnumerable<GetCountriesDto>>.Success(countries);
     }
 
@@ -26,10 +26,9 @@ public class CountriesService(HotelListingDbContext context, IMapper mapper) : I
             .Where(c => c.CountryId == id)
             .ProjectTo<GetCountryDto>(mapper.ConfigurationProvider)
             .FirstOrDefaultAsync();
-        return country is null ? 
-            Result<GetCountryDto>.NotFound(new Error(ErrorCodes.NotFound, $"Country '{id}' not found")) 
-            : 
-            Result<GetCountryDto>.Success(country);
+        return country is null
+            ? Result<GetCountryDto>.NotFound(new Error(ErrorCodes.NotFound, $"Country '{id}' not found"))
+            : Result<GetCountryDto>.Success(country);
     }
 
     public async Task<Result<GetCountryDto>> CreateCountryAsync(CreateCountryDto countryDto)
@@ -44,14 +43,14 @@ public class CountriesService(HotelListingDbContext context, IMapper mapper) : I
                         $"Country with the name {countryDto.Name} already exists."
                     )
                 );
-            
-            var country =  mapper.Map<Country>(countryDto);
+
+            var country = mapper.Map<Country>(countryDto);
 
             context.Countries.Add(country);
             await context.SaveChangesAsync();
-            
+
             var resultDto = mapper.Map<GetCountryDto>(country);
-            
+
             return Result<GetCountryDto>.Success(resultDto);
         }
         catch (Exception e)
@@ -90,7 +89,7 @@ public class CountriesService(HotelListingDbContext context, IMapper mapper) : I
 
             context.Countries.Remove(country);
             await context.SaveChangesAsync();
-            
+
             return Result.Success();
         }
         catch (Exception e)

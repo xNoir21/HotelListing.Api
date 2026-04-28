@@ -20,6 +20,12 @@ public class RoleConfiguration : IEntityTypeConfiguration<IdentityRole>
                 Id = "a740b281-d7d6-458f-9c25-8294e7de3fa6",
                 Name = "User",
                 NormalizedName = "USER"
+            },
+            new IdentityRole
+            {
+                Id = "a740b281-5b82-458f-9c25-d90d590b1387",
+                Name = "Hotel Admin",
+                NormalizedName = "HOTEL ADMIN"
             }
         );
     }

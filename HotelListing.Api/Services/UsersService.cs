@@ -34,7 +34,7 @@ public class UsersService(
             ).ToArray();
             return Result<RegisteredUserDto>.BadRequest(errors);
         }
-        
+
         await userManager.AddToRoleAsync(user, registerUserDto.Role);
 
         return Result<RegisteredUserDto>.Success(mapper.Map<RegisteredUserDto>(user));
@@ -84,7 +84,7 @@ public class UsersService(
                 Convert.ToInt32(configuration.GetSection("JWTSettings:DurationInMinutes").Value)),
             signingCredentials: credentials
         );
-        
+
         // Return Token value
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

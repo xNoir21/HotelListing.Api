@@ -10,6 +10,5 @@ public class ApiKeys
     public string AppName { get; set; } = string.Empty;
     public DateTimeOffset CreatedOnUtc { get; set; }
     public DateTimeOffset? ExpiresOnUtc { get; set; }
-    [NotMapped]
-    public bool IsValid => ExpiresOnUtc.HasValue && ExpiresOnUtc.Value > DateTime.UtcNow;
+    [NotMapped] public bool IsValid => ExpiresOnUtc.HasValue && ExpiresOnUtc.Value > DateTime.UtcNow;
 }

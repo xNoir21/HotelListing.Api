@@ -30,7 +30,7 @@ public readonly record struct Result
     {
         return new Result(false, errors);
     }
-    
+
     public static Result BadRequest(params Error[] errors)
     {
         return new Result(false, errors);
@@ -69,7 +69,7 @@ public readonly record struct Result<T>
     {
         return new Result<T>(false, default!, errors);
     }
-    
+
     public static Result<T> BadRequest(params Error[] errors)
     {
         return new Result<T>(false, default!, errors);

@@ -4,6 +4,5 @@ namespace HotelListing.Api.DTOs.ApiKeys;
 
 public class CreateApiKeysDto
 {
-    [Required]
-    public string AppName { get; set; } = string.Empty;
+    [Required] public string AppName { get; set; } = string.Empty;
 }

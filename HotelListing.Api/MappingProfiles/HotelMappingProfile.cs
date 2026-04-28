@@ -4,7 +4,7 @@ using HotelListing.Api.DTOs.Hotel;
 
 namespace HotelListing.Api.MappingProfiles;
 
-public class HotelMappingProfile :  Profile
+public class HotelMappingProfile : Profile
 {
     public HotelMappingProfile()
     {
@@ -23,6 +23,6 @@ public class CountryNameResolver : IValueResolver<Hotel, GetHotelsDto, string>
 {
     public string Resolve(Hotel source, GetHotelsDto destination, string destMember, ResolutionContext context)
     {
-        return source.Country?.Name ??  string.Empty;
+        return source.Country?.Name ?? string.Empty;
     }
 }

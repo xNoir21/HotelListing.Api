@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using HotelListing.Api.Constants;
 using HotelListing.Api.Contracts;
@@ -21,10 +22,13 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<HotelListingDbContext>();
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>(
     AuthenticationDefaults.BasicScheme,
     options => { }
@@ -53,13 +57,8 @@ builder.Services.AddScoped<IHotelsService, HotelService>();
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IApiKeyValidatorService, ApiKeyValidatorService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
-builder.Services.AddAutoMapper(cfg =>
-{
-    cfg.AddProfile<HotelMappingProfile>();
-    cfg.AddProfile<CountryMappingProfile>();
-    cfg.AddProfile<UserMappingProfiles>();
-});
-
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
 builder.Services.AddControllers().AddJsonOptions(opt =>
 {
     opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;

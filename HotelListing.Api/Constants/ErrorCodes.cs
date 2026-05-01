@@ -8,4 +8,5 @@ public static class ErrorCodes
     public const string Validation = "Validation";
     public const string Failure = "Failure";
     public const string Error = "Error";
+    public const string Forbid = "Forbid";
 }

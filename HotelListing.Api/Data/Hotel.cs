@@ -10,5 +10,5 @@ public class Hotel
     public int CountryId { get; set; }
     public Country? Country { get; set; }
     public ICollection<HotelAdmin> Admins { get; set; } = new List<HotelAdmin>();
-    public ICollection<Booking> Bookings { get; set; } =  new List<Booking>();
+    public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 }

@@ -17,7 +17,9 @@ namespace HotelListing.Api.Services;
 public class UsersService(
     UserManager<ApplicationUser> userManager,
     IMapper mapper,
-    IConfiguration configuration) : IUsersService
+    IConfiguration configuration,
+    IHttpContextAccessor accessor,
+    HotelListingDbContext dbContext) : IUsersService
 {
     public async Task<Result<RegisteredUserDto>> RegisterAsync(RegisterUserDto registerUserDto)
     {
@@ -36,6 +38,17 @@ public class UsersService(
         }
 
         await userManager.AddToRoleAsync(user, registerUserDto.Role);
+
+        if (registerUserDto.Role == "Hotel Admin")
+        {
+            dbContext.HotelAdmins.Add(
+                new HotelAdmin
+                {
+                    UserId = user.Id,
+                    HotelId = registerUserDto.AssociatedhotelId.GetValueOrDefault()
+                });
+            await dbContext.SaveChangesAsync();
+        }
 
         return Result<RegisteredUserDto>.Success(mapper.Map<RegisteredUserDto>(user));
     }
@@ -88,4 +101,8 @@ public class UsersService(
         // Return Token value
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    public string UserId => accessor?.HttpContext?.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
+                            accessor?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+                            string.Empty;
 }

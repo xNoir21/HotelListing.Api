@@ -8,4 +8,5 @@ public interface IUsersService
 {
     Task<Result<RegisteredUserDto>> RegisterAsync(RegisterUserDto registerUserDto);
     Task<Result<string>> LoginAsync(LoginUserDto loginUserDto);
+    string UserId { get; }
 }

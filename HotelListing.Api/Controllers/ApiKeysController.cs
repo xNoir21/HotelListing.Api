@@ -1,5 +1,5 @@
-using HotelListing.Api.Contracts;
-using HotelListing.Api.DTOs.ApiKeys;
+using HotelListing.Api.Application.Contracts;
+using HotelListing.Api.Application.DTOs.ApiKeys;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelListing.Api.Controllers;

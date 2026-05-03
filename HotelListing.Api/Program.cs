@@ -1,11 +1,12 @@
-using System.Reflection;
 using System.Text;
-using HotelListing.Api.Constants;
-using HotelListing.Api.Contracts;
-using HotelListing.Api.Data;
+using System.Text.Json.Serialization;
+using HotelListing.Api.Application.Contracts;
+using HotelListing.Api.Application.MappingProfiles;
+using HotelListing.Api.Application.Services;
+using HotelListing.API.Common.Constants;
+using HotelListing.API.Common.Models.Configuration;
+using HotelListing.Api.Domain;
 using HotelListing.Api.Handlers;
-using HotelListing.Api.MappingProfiles;
-using HotelListing.Api.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -24,6 +25,9 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JWTSettings"));
+var jwtSettings = builder.Configuration.GetSection("JWTSettings").Get<JwtSettings>() ?? new JwtSettings();
+if (string.IsNullOrEmpty(jwtSettings.Key)) throw new Exception("JWTSettings:Key is null or empty");
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -43,10 +47,9 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration.GetSection("JWTSettings:Issuer").Value,
-        ValidAudience = builder.Configuration.GetSection("JWTSettings:Audience").Value,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration.GetSection("JWTSettings:Key").Value)),
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
         ClockSkew = TimeSpan.Zero
     };
 });
@@ -58,10 +61,13 @@ builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IApiKeyValidatorService, ApiKeyValidatorService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
-builder.Services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
+builder.Services.AddAutoMapper(cfg => { }, typeof(BookingMappingProfile).Assembly);
+builder.Services.AddAutoMapper(cfg => { }, typeof(CountryMappingProfile).Assembly);
+builder.Services.AddAutoMapper(cfg => { }, typeof(HotelMappingProfile).Assembly);
+builder.Services.AddAutoMapper(cfg => { }, typeof(UserMappingProfiles).Assembly);
 builder.Services.AddControllers().AddJsonOptions(opt =>
 {
-    opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

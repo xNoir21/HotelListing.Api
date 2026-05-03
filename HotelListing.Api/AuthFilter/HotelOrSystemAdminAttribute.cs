@@ -1,5 +1,6 @@
 using System.Security.Claims;
-using HotelListing.Api.Data;
+using HotelListing.API.Common.Constants;
+using HotelListing.Api.Domain;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +22,7 @@ public class HotelOrSystemAdminFilter(HotelListingDbContext dbContext) : IAsyncA
             return;
         }
 
-        if (httpUser!.IsInRole("Admin")) return;
+        if (httpUser!.IsInRole(RoleNames.Admin)) return;
 
         var userId = httpUser.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
                      httpUser.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -37,7 +38,7 @@ public class HotelOrSystemAdminFilter(HotelListingDbContext dbContext) : IAsyncA
             return;
         }
 
-        if (!int.TryParse(hotelIdObj.ToString(), out var hotelId))
+        if (!int.TryParse(hotelIdObj!.ToString(), out var hotelId))
         {
             context.Result = new BadRequestResult();
             return;

@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
-using HotelListing.Api.Constants;
-using HotelListing.Api.Contracts;
-using HotelListing.Api.DTOs.Auth;
+using HotelListing.Api.Application.Contracts;
+using HotelListing.Api.Application.DTOs.Auth;
+using HotelListing.API.Common.Constants;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
@@ -35,11 +35,11 @@ public class BasicAuthenticationHandler(
         }
         catch
         {
-            return AuthenticateResult.Fail(AuthMessages.INVALID_TOKEN);
+            return AuthenticateResult.Fail(AuthMessages.InvalidToken);
         }
 
         var separatorIndex = decoded.IndexOf(":");
-        if (separatorIndex <= 0) return AuthenticateResult.Fail(AuthMessages.INVALID_FORMAT);
+        if (separatorIndex <= 0) return AuthenticateResult.Fail(AuthMessages.InvalidFormat);
 
         var userName = decoded[..separatorIndex];
         var password = decoded[(separatorIndex + 1)..];
@@ -52,7 +52,7 @@ public class BasicAuthenticationHandler(
 
         var result = await usersService.LoginAsync(loginDto);
 
-        if (!result.IsSuccess) return AuthenticateResult.Fail(AuthMessages.INVALID_FORMAT);
+        if (!result.IsSuccess) return AuthenticateResult.Fail(AuthMessages.InvalidFormat);
 
         var claims = new List<Claim>
         {

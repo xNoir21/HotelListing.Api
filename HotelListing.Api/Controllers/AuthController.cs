@@ -1,6 +1,6 @@
-using HotelListing.Api.Contracts;
-using HotelListing.Api.DTOs.Auth;
-using HotelListing.Api.DTOs.Auth.Register;
+using HotelListing.Api.Application.Contracts;
+using HotelListing.Api.Application.DTOs.Auth;
+using HotelListing.Api.Application.DTOs.Auth.Register;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

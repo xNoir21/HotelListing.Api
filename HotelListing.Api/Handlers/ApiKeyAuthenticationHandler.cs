@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using HotelListing.Api.Constants;
-using HotelListing.Api.Contracts;
+using HotelListing.Api.Application.Contracts;
+using HotelListing.API.Common.Constants;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 

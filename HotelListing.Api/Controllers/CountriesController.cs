@@ -1,6 +1,5 @@
-using HotelListing.Api.Constants;
-using HotelListing.Api.Contracts;
-using HotelListing.Api.DTOs.Country;
+using HotelListing.Api.Application.Contracts;
+using HotelListing.Api.Application.DTOs.Country;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +12,7 @@ public class CountriesController(ICountriesService countriesService) : BaseApiCo
 {
     // GET: api/Countries
     [HttpGet]
-    [Authorize(AuthenticationSchemes = AuthenticationDefaults.ApiKeyScheme)] // Use different scheme
+    //[Authorize(AuthenticationSchemes = AuthenticationDefaults.ApiKeyScheme)] // Use different scheme
     public async Task<ActionResult<IEnumerable<GetCountriesDto>>> GetCountries()
     {
         var result = await countriesService.GetCountriesAsync();

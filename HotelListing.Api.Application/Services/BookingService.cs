@@ -3,9 +3,11 @@ using AutoMapper.QueryableExtensions;
 using HotelListing.Api.Application.Contracts;
 using HotelListing.Api.Application.DTOs.Booking;
 using HotelListing.API.Common.Constants;
+using HotelListing.API.Common.Enums;
+using HotelListing.API.Common.Models.Extensions;
+using HotelListing.API.Common.Models.Paging;
 using HotelListing.API.Common.Results;
 using HotelListing.Api.Domain;
-using HotelListing.Api.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelListing.Api.Application.Services;
@@ -13,38 +15,23 @@ namespace HotelListing.Api.Application.Services;
 public class BookingService(HotelListingDbContext context, IUsersService usersService, IMapper mapper)
     : IBookingService
 {
-    public async Task<Result<ICollection<GetBookingDto>>> AdminGetBookingsForHotelAsync(int hotelId)
-    {
-        var hotel = await context.Hotels.AnyAsync(h => h.Id == hotelId);
-        if (!hotel)
-            return Result<ICollection<GetBookingDto>>
-                .Failure(new Error("Failure", $"Hotel with id {hotelId} not found."));
-
-        var bookings = await context.Bookings
-            .Where(b => b.HotelId == hotelId)
-            .OrderBy(b => b.CheckIn)
-            .ProjectTo<GetBookingDto>(mapper.ConfigurationProvider)
-            .ToListAsync();
-
-        return Result<ICollection<GetBookingDto>>.Success(bookings);
-    }
-
-    public async Task<Result<ICollection<GetBookingDto>>> UserGetBookingsForHotelAsync(int hotelId)
+    public async Task<Result<PagedResult<GetBookingDto>>> UserGetBookingsForHotelAsync(int hotelId,
+        PaginationParameters paginationParameters)
     {
         var userId = usersService.UserId;
 
         var hotel = await context.Hotels.AnyAsync(h => h.Id == hotelId);
         if (!hotel)
-            return Result<ICollection<GetBookingDto>>
+            return Result<PagedResult<GetBookingDto>>
                 .Failure(new Error("Failure", $"Hotel with id {hotelId} not found."));
 
         var bookings = await context.Bookings
             .Where(b => b.HotelId == hotelId && b.UserId == userId)
             .OrderBy(b => b.CheckIn)
             .ProjectTo<GetBookingDto>(mapper.ConfigurationProvider)
-            .ToListAsync();
+            .ToPagedResultAsync(paginationParameters);
 
-        return Result<ICollection<GetBookingDto>>.Success(bookings);
+        return Result<PagedResult<GetBookingDto>>.Success(bookings);
     }
 
     public async Task<Result<GetBookingDto>> CreateBookingsAsync(CreateBookingDto createBookingDto)
@@ -67,7 +54,7 @@ public class BookingService(HotelListingDbContext context, IUsersService usersSe
 
         var booking = mapper.Map<Booking>(createBookingDto);
         booking.TotalPrice = hotel.PerNightRate * nights;
-        booking.Status = BookingStatusEnum.Pending;
+        booking.Status = BookingStatus.Pending;
         booking.UserId = userId;
 
         context.Bookings.Add(booking);
@@ -94,7 +81,7 @@ public class BookingService(HotelListingDbContext context, IUsersService usersSe
         if (booking is null)
             return Result<GetBookingDto>.Failure(new Error(ErrorCodes.Failure,
                 $"Hotel '{hotelId}' was not found"));
-        if (booking.Status == BookingStatusEnum.Cancelled)
+        if (booking.Status == BookingStatus.Cancelled)
             return Result<GetBookingDto>.Failure(new Error(ErrorCodes.Failure,
                 "Canceled bookings cannot be modified"));
 
@@ -121,11 +108,11 @@ public class BookingService(HotelListingDbContext context, IUsersService usersSe
         if (booking is null)
             return Result.Failure(new Error(ErrorCodes.Failure,
                 $"Booking '{bookingId}' was not found"));
-        if (booking.Status == BookingStatusEnum.Cancelled)
+        if (booking.Status == BookingStatus.Cancelled)
             return Result.Failure(new Error(ErrorCodes.Failure,
                 "The booking has already been canceled"));
 
-        booking.Status = BookingStatusEnum.Cancelled;
+        booking.Status = BookingStatus.Cancelled;
         booking.UpdatedAtUtc = DateTime.UtcNow;
         await context.SaveChangesAsync();
 
@@ -141,11 +128,11 @@ public class BookingService(HotelListingDbContext context, IUsersService usersSe
         if (booking is null)
             return Result.Failure(new Error(ErrorCodes.Failure,
                 $"Booking '{bookingId}' was not found"));
-        if (booking.Status == BookingStatusEnum.Cancelled)
+        if (booking.Status == BookingStatus.Cancelled)
             return Result.Failure(new Error(ErrorCodes.Failure,
                 "The booking has already been canceled"));
 
-        booking.Status = BookingStatusEnum.Confirmed;
+        booking.Status = BookingStatus.Confirmed;
         booking.UpdatedAtUtc = DateTime.UtcNow;
         await context.SaveChangesAsync();
 
@@ -161,22 +148,39 @@ public class BookingService(HotelListingDbContext context, IUsersService usersSe
         if (booking is null)
             return Result.Failure(new Error(ErrorCodes.Failure,
                 $"Booking '{bookingId}' was not found"));
-        if (booking.Status == BookingStatusEnum.Cancelled)
+        if (booking.Status == BookingStatus.Cancelled)
             return Result.Failure(new Error(ErrorCodes.Failure,
                 "The booking has already been canceled"));
 
-        booking.Status = BookingStatusEnum.Cancelled;
+        booking.Status = BookingStatus.Cancelled;
         booking.UpdatedAtUtc = DateTime.UtcNow;
         await context.SaveChangesAsync();
 
         return Result.Success();
     }
 
+    public async Task<Result<PagedResult<GetBookingDto>>> AdminGetBookingsForHotelAsync(int hotelId,
+        PaginationParameters paginationParameters)
+    {
+        var hotel = await context.Hotels.AnyAsync(h => h.Id == hotelId);
+        if (!hotel)
+            return Result<PagedResult<GetBookingDto>>
+                .Failure(new Error("Failure", $"Hotel with id {hotelId} not found."));
+
+        var bookings = await context.Bookings
+            .Where(b => b.HotelId == hotelId)
+            .OrderBy(b => b.CheckIn)
+            .ProjectTo<GetBookingDto>(mapper.ConfigurationProvider)
+            .ToPagedResultAsync(paginationParameters);
+
+        return Result<PagedResult<GetBookingDto>>.Success(bookings);
+    }
+
     private async Task<bool> isOverlap(int hotelId, DateOnly checkIn, DateOnly checkOut, string userId,
         int? bookingId = null)
     {
         var query = context.Bookings.Where(b => b.HotelId == hotelId &&
-                                                b.Status != BookingStatusEnum.Cancelled &&
+                                                b.Status != BookingStatus.Cancelled &&
                                                 checkIn < b.CheckOut &&
                                                 checkOut > b.CheckIn &&
                                                 b.UserId == userId).AsQueryable();

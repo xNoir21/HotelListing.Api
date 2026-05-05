@@ -4,7 +4,14 @@ namespace HotelListing.Api.Application.DTOs.Country;
 
 public class CreateCountryDto
 {
-    [Required] [MaxLength(50)] public string Name { get; set; } = null!;
+    private const int NameMaxLength = 50;
+    private const int ShortNameMaxLength = 3;
 
-    [Required] [MaxLength(3)] public string ShortName { get; set; } = null!;
+    [Required]
+    [MaxLength(NameMaxLength)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(ShortNameMaxLength)]
+    public string ShortName { get; set; } = string.Empty;
 }

@@ -1,6 +1,11 @@
+using Azure;
 using HotelListing.Api.Application.Contracts;
 using HotelListing.Api.Application.DTOs.Country;
+using HotelListing.API.Common.Constants;
+using HotelListing.API.Common.Models.Filtering;
+using HotelListing.API.Common.Models.Paging;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelListing.Api.Controllers;
@@ -13,9 +18,11 @@ public class CountriesController(ICountriesService countriesService) : BaseApiCo
     // GET: api/Countries
     [HttpGet]
     //[Authorize(AuthenticationSchemes = AuthenticationDefaults.ApiKeyScheme)] // Use different scheme
-    public async Task<ActionResult<IEnumerable<GetCountriesDto>>> GetCountries()
+    public async Task<ActionResult<PagedResult<GetCountriesDto>>> GetCountries(
+        [FromQuery] PaginationParameters paginationParameters,
+        [FromQuery] CountryFilterParameters filters)
     {
-        var result = await countriesService.GetCountriesAsync();
+        var result = await countriesService.GetCountriesAsync(paginationParameters, filters);
         return ToActionResult(result);
     }
 
@@ -30,17 +37,27 @@ public class CountriesController(ICountriesService countriesService) : BaseApiCo
     // PUT: api/Countries/5
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleNames.Admin)]
     public async Task<IActionResult> PutCountry(int id, [FromBody] UpdateCountryDto countryDto)
     {
         var result = await countriesService.UpdateCountryAsync(id, countryDto);
         return ToActionResult(result);
     }
 
+    [HttpPatch("{id}")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> PatchCountry(int id, [FromBody] JsonPatchDocument<UpdateCountryDto> patchDocument)
+    {
+        if(patchDocument is null) return BadRequest("Patch document is required");
+        
+        var result = await countriesService.PatchCountryAsync(id, patchDocument);
+        return ToActionResult(result);
+    }
+
     // POST: api/Countries
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleNames.Admin)]
     public async Task<ActionResult<CreateCountryDto>> PostCountry([FromBody] CreateCountryDto countryDto)
     {
         var result = await countriesService.CreateCountryAsync(countryDto);
@@ -50,7 +67,7 @@ public class CountriesController(ICountriesService countriesService) : BaseApiCo
 
     // DELETE: api/Countries/5
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleNames.Admin)]
     public async Task<IActionResult> DeleteCountry(int id)
     {
         var result = await countriesService.DeleteCountryAsync(id);

@@ -3,21 +3,35 @@ using AutoMapper.QueryableExtensions;
 using HotelListing.Api.Application.Contracts;
 using HotelListing.Api.Application.DTOs.Country;
 using HotelListing.API.Common.Constants;
+using HotelListing.API.Common.Models.Extensions;
+using HotelListing.API.Common.Models.Filtering;
+using HotelListing.API.Common.Models.Paging;
 using HotelListing.API.Common.Results;
 using HotelListing.Api.Domain;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelListing.Api.Application.Services;
 
 public class CountriesService(HotelListingDbContext context, IMapper mapper) : ICountriesService
 {
-    public async Task<Result<IEnumerable<GetCountriesDto>>> GetCountriesAsync()
+    public async Task<Result<PagedResult<GetCountriesDto>>> GetCountriesAsync(PaginationParameters paginationParameters,
+        CountryFilterParameters filters)
     {
-        var countries = await context.Countries
-            .ProjectTo<GetCountriesDto>(mapper.ConfigurationProvider)
-            .ToListAsync();
+        var query = context.Countries.AsQueryable();
 
-        return Result<IEnumerable<GetCountriesDto>>.Success(countries);
+        if (!string.IsNullOrWhiteSpace(filters.Search))
+        {
+            var term = filters.Search.Trim();
+            query = query.Where(c => EF.Functions.Like(c.Name, $"%{term}%") ||
+                                     EF.Functions.Like(c.ShortName, $"%{term}%"));
+        }
+
+        var countries = await query
+            .ProjectTo<GetCountriesDto>(mapper.ConfigurationProvider)
+            .ToPagedResultAsync(paginationParameters);
+
+        return Result<PagedResult<GetCountriesDto>>.Success(countries);
     }
 
     public async Task<Result<GetCountryDto>> GetCountryAsync(int id)
@@ -107,5 +121,31 @@ public class CountriesService(HotelListingDbContext context, IMapper mapper) : I
     {
         return await context.Countries
             .AnyAsync(e => e.Name.ToLower().Trim() == name.ToLower().Trim());
+    }
+
+    public async Task<Result> PatchCountryAsync(int id, JsonPatchDocument<UpdateCountryDto> patchDocument)
+    {
+        var country = await context.Countries.FindAsync(id);
+        if (country is null) return Result.NotFound(new Error(ErrorCodes.NotFound, $"Country '{id}' not found"));
+
+        var countryDto = mapper.Map<UpdateCountryDto>(country);
+        patchDocument.ApplyTo(countryDto);
+
+        if (countryDto.CountryId != id)
+            return Result.BadRequest(new Error(ErrorCodes.Validation, "Cannot modify the Id of the country"));
+
+        var duplicateExists = await context.Countries.AnyAsync(c =>
+            c.Name.ToLower().Trim() == countryDto.Name.ToLower().Trim() &&
+            c.CountryId != id
+        );
+
+        if (duplicateExists)
+            return Result.Failure(new Error(ErrorCodes.Conflict,
+                $"Country with name {countryDto.Name} already exists"));
+
+        mapper.Map(countryDto, country);
+        await context.SaveChangesAsync();
+
+        return Result.Success();
     }
 }

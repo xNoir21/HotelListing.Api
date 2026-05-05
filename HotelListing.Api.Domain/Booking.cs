@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using HotelListing.Api.Domain.Enums;
+using HotelListing.API.Common.Enums;
 
 namespace HotelListing.Api.Domain;
 
@@ -16,5 +16,5 @@ public class Booking
     public decimal TotalPrice { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
-    public BookingStatusEnum Status { get; set; } = BookingStatusEnum.Pending;
+    public BookingStatus Status { get; set; } = BookingStatus.Pending;
 }

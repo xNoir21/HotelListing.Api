@@ -1,11 +1,15 @@
 using HotelListing.Api.Application.DTOs.Hotel;
+using HotelListing.API.Common.Models.Filtering;
+using HotelListing.API.Common.Models.Paging;
 using HotelListing.API.Common.Results;
 
 namespace HotelListing.Api.Application.Contracts;
 
 public interface IHotelsService
 {
-    Task<Result<IEnumerable<GetHotelsDto>>> GetHotelsAsync();
+    Task<Result<PagedResult<GetHotelsDto>>> GetHotelsAsync(PaginationParameters paginationParameters,
+        HotelFilteringParameters hotelFilteringParameters);
+
     Task<Result<GetHotelsDto>> GetHotelAsync(int id);
     Task<Result<GetHotelsDto>> CreateHotelAsync(CreateHotelDto hotelDto);
     Task<Result> UpdateHotelAsync(int id, UpdateHotelDto hotelDto);

@@ -11,5 +11,6 @@ public class CountryMappingProfile : Profile
         CreateMap<Country, GetCountriesDto>();
         CreateMap<Country, GetCountryDto>();
         CreateMap<CreateCountryDto, Country>();
+        CreateMap<Country, UpdateCountryDto>().ReverseMap();
     }
 }

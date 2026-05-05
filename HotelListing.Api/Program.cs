@@ -65,10 +65,9 @@ builder.Services.AddAutoMapper(cfg => { }, typeof(BookingMappingProfile).Assembl
 builder.Services.AddAutoMapper(cfg => { }, typeof(CountryMappingProfile).Assembly);
 builder.Services.AddAutoMapper(cfg => { }, typeof(HotelMappingProfile).Assembly);
 builder.Services.AddAutoMapper(cfg => { }, typeof(UserMappingProfiles).Assembly);
-builder.Services.AddControllers().AddJsonOptions(opt =>
-{
-    opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-});
+builder.Services.AddControllers()
+    .AddNewtonsoftJson()
+    .AddJsonOptions(opt => { opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles; });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 

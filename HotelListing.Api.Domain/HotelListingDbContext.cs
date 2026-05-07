@@ -17,5 +17,20 @@ public class HotelListingDbContext(DbContextOptions<HotelListingDbContext> optio
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        modelBuilder.Entity<Country>()
+            .HasIndex(c => c.Name);
+
+        modelBuilder.Entity<Country>()
+            .HasIndex(c => c.ShortName);
+
+        modelBuilder.Entity<Hotel>()
+            .HasIndex(h => h.Name);
+
+        modelBuilder.Entity<Hotel>()
+            .HasIndex(h => h.CountryId);
+
+        modelBuilder.Entity<Hotel>()
+            .HasIndex(h => new { h.CountryId, h.Rating });
     }
 }

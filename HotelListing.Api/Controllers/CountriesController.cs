@@ -1,4 +1,3 @@
-using Azure;
 using HotelListing.Api.Application.Contracts;
 using HotelListing.Api.Application.DTOs.Country;
 using HotelListing.API.Common.Constants;
@@ -48,8 +47,8 @@ public class CountriesController(ICountriesService countriesService) : BaseApiCo
     [Authorize(Roles = RoleNames.Admin)]
     public async Task<IActionResult> PatchCountry(int id, [FromBody] JsonPatchDocument<UpdateCountryDto> patchDocument)
     {
-        if(patchDocument is null) return BadRequest("Patch document is required");
-        
+        if (patchDocument is null) return BadRequest("Patch document is required");
+
         var result = await countriesService.PatchCountryAsync(id, patchDocument);
         return ToActionResult(result);
     }

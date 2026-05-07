@@ -26,9 +26,18 @@ public class HotelService(HotelListingDbContext context, ICountriesService count
         if (filters.MinRating.HasValue) query = query.Where(h => h.Rating <= filters.MinRating.Value);
         if (filters.MaxRating.HasValue) query = query.Where(h => h.Rating <= filters.MaxRating.Value);
         if (!string.IsNullOrWhiteSpace(filters.Location))
-            query = query.Where(h => h.Address.Contains(filters.Location));
+        {
+            var location = filters.Location.Trim();
+            query = query.Where(h => EF.Functions.Like(h.Address, $"%{location}%"));
+        }
+
         // generic search param
-        if (!string.IsNullOrWhiteSpace(filters.Search)) query = query.Where(h => h.Name.Contains(filters.Search));
+        if (!string.IsNullOrWhiteSpace(filters.Search))
+        {
+            var search = filters.Search.Trim();
+            query = query.Where(h => EF.Functions.Like(h.Name, $"%{search}%") ||
+                                     EF.Functions.Like(h.Address, $"%{search}%"));
+        }
 
         query = filters.OrderBy?.ToLower() switch
         {
@@ -169,6 +178,7 @@ public class HotelService(HotelListingDbContext context, ICountriesService count
 
     public async Task<bool> HotelExistsAsync(string name)
     {
-        return await context.Hotels.AnyAsync(h => h.Name == name);
+        var normalizedName = name.ToLower().Trim();
+        return await context.Hotels.AnyAsync(h => h.Name.ToLower().Trim() == normalizedName);
     }
 }

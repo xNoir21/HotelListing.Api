@@ -28,6 +28,7 @@ public class CountriesService(HotelListingDbContext context, IMapper mapper) : I
         }
 
         var countries = await query
+            .AsNoTracking()
             .ProjectTo<GetCountriesDto>(mapper.ConfigurationProvider)
             .ToPagedResultAsync(paginationParameters);
 
@@ -37,6 +38,7 @@ public class CountriesService(HotelListingDbContext context, IMapper mapper) : I
     public async Task<Result<GetCountryDto>> GetCountryAsync(int id)
     {
         var country = await context.Countries
+            .AsNoTracking()
             .Where(c => c.CountryId == id)
             .ProjectTo<GetCountryDto>(mapper.ConfigurationProvider)
             .FirstOrDefaultAsync();
@@ -134,8 +136,9 @@ public class CountriesService(HotelListingDbContext context, IMapper mapper) : I
         if (countryDto.CountryId != id)
             return Result.BadRequest(new Error(ErrorCodes.Validation, "Cannot modify the Id of the country"));
 
+        var normalizedName = countryDto.Name.ToLower().Trim();
         var duplicateExists = await context.Countries.AnyAsync(c =>
-            c.Name.ToLower().Trim() == countryDto.Name.ToLower().Trim() &&
+            c.Name.ToLower().Trim() == normalizedName &&
             c.CountryId != id
         );
 

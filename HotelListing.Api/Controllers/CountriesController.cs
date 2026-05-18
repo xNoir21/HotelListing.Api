@@ -6,16 +6,19 @@ using HotelListing.API.Common.Models.Paging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HotelListing.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+[EnableRateLimiting("fixed")]
 public class CountriesController(ICountriesService countriesService) : BaseApiController
 {
     // GET: api/Countries
     [HttpGet]
+    [OutputCache]
     //[Authorize(AuthenticationSchemes = AuthenticationDefaults.ApiKeyScheme)] // Use different scheme
     public async Task<ActionResult<PagedResult<GetCountriesDto>>> GetCountries(
         [FromQuery] PaginationParameters paginationParameters,

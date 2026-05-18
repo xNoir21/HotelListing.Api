@@ -10,38 +10,70 @@ using HotelListing.API.Common.Results;
 using HotelListing.Api.Domain;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace HotelListing.Api.Application.Services;
-
-public class CountriesService(HotelListingDbContext context, IMapper mapper) : ICountriesService
+//Copy using In Memory Cache
+public class CountriesServiceCopy(HotelListingDbContext context, IMapper mapper, IMemoryCache cache) : ICountriesService
 {
+    private const string CacheKey = "Countries-List-";
     public async Task<Result<PagedResult<GetCountriesDto>>> GetCountriesAsync(PaginationParameters paginationParameters,
         CountryFilterParameters filters)
     {
-        var query = context.Countries.AsQueryable();
+        var searchTerm = filters.Search?.Trim().ToLowerInvariant() ?? string.Empty;
+        var cacheKey = $"{CacheKey}{searchTerm}-{paginationParameters.PageNumber}-{paginationParameters.PageSize}";
 
-        if (!string.IsNullOrWhiteSpace(filters.Search))
+        if (!cache.TryGetValue(cacheKey, out PagedResult<GetCountriesDto>? countries))
         {
-            var term = filters.Search.Trim();
-            query = query.Where(c => EF.Functions.Like(c.Name, $"%{term}%") ||
-                                     EF.Functions.Like(c.ShortName, $"%{term}%"));
-        }
+            var query = context.Countries.AsQueryable();
 
-        var countries = await query
-            .AsNoTracking()
-            .ProjectTo<GetCountriesDto>(mapper.ConfigurationProvider)
-            .ToPagedResultAsync(paginationParameters);
+            if (!string.IsNullOrWhiteSpace(filters.Search))
+            {
+                var term = filters.Search.Trim();
+                query = query.Where(c => EF.Functions.Like(c.Name, $"%{term}%") ||
+                                         EF.Functions.Like(c.ShortName, $"%{term}%"));
+            }
+
+            countries = await query
+                .AsNoTracking()
+                .ProjectTo<GetCountriesDto>(mapper.ConfigurationProvider)
+                .ToPagedResultAsync(paginationParameters);
+            
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(10))
+                .SetAbsoluteExpiration(TimeSpan.FromHours(1));
+            cache.Set(cacheKey, countries, cacheEntryOptions);
+        }
+        
+        countries ??= new PagedResult<GetCountriesDto>();
 
         return Result<PagedResult<GetCountriesDto>>.Success(countries);
     }
 
     public async Task<Result<GetCountryDto>> GetCountryAsync(int id)
     {
-        var country = await context.Countries
-            .AsNoTracking()
-            .Where(c => c.CountryId == id)
-            .ProjectTo<GetCountryDto>(mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync();
+        // In Memory Cache
+        // Check the cache
+        var cacheKey = $"Country-{id}";
+        if (!cache.TryGetValue(cacheKey, out GetCountryDto? country))
+        {
+            // if not in cache, get from db and add to cache
+            country = await context.Countries
+                .AsNoTracking()
+                .Where(c => c.CountryId == id)
+                .ProjectTo<GetCountryDto>(mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
+
+            if (country != null)
+            {
+                var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(10))
+                    .SetAbsoluteExpiration(TimeSpan.FromHours(1));
+
+                cache.Set(cacheKey, country, cacheEntryOptions);
+            }
+        }
+
         return country is null
             ? Result<GetCountryDto>.NotFound(new Error(ErrorCodes.NotFound, $"Country '{id}' not found"))
             : Result<GetCountryDto>.Success(country);
@@ -66,6 +98,8 @@ public class CountriesService(HotelListingDbContext context, IMapper mapper) : I
             await context.SaveChangesAsync();
 
             var resultDto = mapper.Map<GetCountryDto>(country);
+            
+            cache.Remove($"{CacheKey}");
 
             return Result<GetCountryDto>.Success(resultDto);
         }
